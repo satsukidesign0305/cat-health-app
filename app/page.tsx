@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { v4 as uuid } from "uuid";
@@ -44,7 +44,6 @@ export default function HomePage() {
   const [saved, setSaved] = useState(false);
   const [medName, setMedName] = useState("");
   const [eventNote, setEventNote] = useState("");
-  const dateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const loaded = getCats();
@@ -146,32 +145,32 @@ export default function HomePage() {
 
         {/* 日付セレクター */}
         <div className="flex items-center gap-2 mt-2">
-          <button
-            onClick={() => dateInputRef.current?.showPicker()}
-            className="flex items-center gap-2 bg-white/20 rounded-xl px-3 py-2 text-sm font-medium flex-1"
-          >
-            <CalendarDays size={15} />
-            <span>{dateLabel}</span>
-            {isToday && (
-              <span className="ml-auto text-xs bg-white/30 rounded-full px-2 py-0.5">今日</span>
-            )}
-          </button>
+          <div className="relative flex-1">
+            {/* 見た目のボタン */}
+            <div className="flex items-center gap-2 bg-white/20 rounded-xl px-3 py-2 text-sm font-medium pointer-events-none">
+              <CalendarDays size={15} />
+              <span>{dateLabel}</span>
+              {isToday && (
+                <span className="ml-auto text-xs bg-white/30 rounded-full px-2 py-0.5">今日</span>
+              )}
+            </div>
+            {/* 透明な date input をボタンの上に重ねる */}
+            <input
+              type="date"
+              value={selectedDate}
+              max={todayStr()}
+              onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
+              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+            />
+          </div>
           {!isToday && (
             <button
               onClick={() => setSelectedDate(todayStr())}
-              className="text-xs bg-white/20 rounded-xl px-3 py-2 font-medium"
+              className="text-xs bg-white/20 rounded-xl px-3 py-2 font-medium whitespace-nowrap"
             >
               今日に戻る
             </button>
           )}
-          <input
-            ref={dateInputRef}
-            type="date"
-            value={selectedDate}
-            max={todayStr()}
-            onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
-            className="sr-only"
-          />
         </div>
       </header>
 
