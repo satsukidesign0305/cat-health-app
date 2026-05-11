@@ -128,20 +128,39 @@ export default function HomePage() {
         <h1 className="text-xl font-bold tracking-wide">にゃるて</h1>
 
         {/* 猫セレクター */}
-        <div className="relative mt-2">
-          <select
-            value={selectedCatId}
-            onChange={(e) => setSelectedCatId(e.target.value)}
-            className="w-full bg-white/20 text-white rounded-xl px-3 py-2 pr-8 appearance-none font-semibold focus:outline-none"
-          >
+        {cats.length === 1 ? (
+          <div className="flex items-center gap-2 mt-2">
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-white/30 flex-shrink-0 flex items-center justify-center">
+              {cats[0].photoUrl ? (
+                <img src={cats[0].photoUrl} alt={cats[0].name} className="w-full h-full object-cover" />
+              ) : (
+                <CatIcon size={16} className="text-white" />
+              )}
+            </div>
+            <span className="font-semibold">{cats[0].name}</span>
+          </div>
+        ) : (
+          <div className="flex gap-2 mt-2 overflow-x-auto pb-0.5">
             {cats.map((c) => (
-              <option key={c.id} value={c.id} className="text-gray-800">
+              <button
+                key={c.id}
+                onClick={() => setSelectedCatId(c.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  c.id === selectedCatId ? "bg-white text-orange-500" : "bg-white/20 text-white"
+                }`}
+              >
+                <div className="w-5 h-5 rounded-full overflow-hidden bg-orange-100 flex-shrink-0 flex items-center justify-center">
+                  {c.photoUrl ? (
+                    <img src={c.photoUrl} alt={c.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <CatIcon size={11} className="text-orange-400" />
+                  )}
+                </div>
                 {c.name}
-              </option>
+              </button>
             ))}
-          </select>
-          <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-        </div>
+          </div>
+        )}
 
         {/* 日付セレクター */}
         <div className="flex items-center gap-2 mt-2">
