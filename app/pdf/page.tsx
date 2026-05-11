@@ -115,7 +115,7 @@ function PdfPageContent() {
         <>
           <button
             onClick={() => window.print()}
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-semibold text-white bg-purple-600 active:bg-purple-700"
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-semibold text-white bg-orange-500 active:bg-orange-600"
           >
             <Printer size={20} />
             印刷 / PDFで保存
@@ -135,7 +135,7 @@ function PdfPageContent() {
 export default function PdfPage() {
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="bg-purple-600 text-white px-4 py-4 flex items-center gap-3 print:hidden">
+      <header className="bg-orange-500 text-white px-4 py-4 flex items-center gap-3 print:hidden">
         <Link href="/history" className="p-1">
           <ChevronLeft size={22} />
         </Link>

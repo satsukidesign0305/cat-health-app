@@ -1,11 +1,11 @@
 {
-  "name": "猫の健康手帳",
-  "short_name": "猫健康",
+  "name": "にゃるて",
+  "short_name": "にゃるて",
   "description": "猫の毎日の体調・排泄・投薬を記録するアプリ",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fdf4ff",
-  "theme_color": "#a855f7",
+  "background_color": "#fff7ed",
+  "theme_color": "#f97316",
   "orientation": "portrait",
   "icons": [
     {
