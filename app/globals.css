@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #a855f7;
+}
+
+body {
+  background-color: #fafafa;
+  color: #1f2937;
+}
+
+/* モバイル向けに最下部のナビゲーションバー分の余白 */
+main {
+  padding-bottom: env(safe-area-inset-bottom);
+}
