@@ -4,6 +4,7 @@ export interface Cat {
   breed?: string;
   birthDate?: string;
   color?: string;
+  sex?: "male" | "female";
   photoUrl?: string;
   createdAt: string;
 }

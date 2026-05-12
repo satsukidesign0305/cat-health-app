@@ -125,7 +125,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen pb-24">
       <header className="bg-orange-500 text-white px-4 pt-4 pb-3">
-        <h1 className="text-xl font-bold tracking-wide">にゃるて</h1>
+        <h1 className="text-xl font-bold tracking-wide text-center">にゃるて</h1>
 
         {/* 猫セレクター */}
         {cats.length === 1 ? (

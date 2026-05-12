@@ -29,11 +29,12 @@ interface CatFormState {
   name: string;
   breed: string;
   birthDate: string;
+  sex: "male" | "female" | "";
   photoUrl: string;
 }
 
 function emptyForm(): CatFormState {
-  return { name: "", breed: "", birthDate: "", photoUrl: "" };
+  return { name: "", breed: "", birthDate: "", sex: "", photoUrl: "" };
 }
 
 function catToForm(cat: Cat): CatFormState {
@@ -41,6 +42,7 @@ function catToForm(cat: Cat): CatFormState {
     name: cat.name,
     breed: cat.breed ?? "",
     birthDate: cat.birthDate ?? "",
+    sex: cat.sex ?? "",
     photoUrl: cat.photoUrl ?? "",
   };
 }
@@ -140,6 +142,32 @@ function CatForm({
         />
       </div>
 
+      <div>
+        <label className="text-xs text-gray-400">性別</label>
+        <div className="flex gap-2 mt-1">
+          {(["male", "female"] as const).map((s) => {
+            const label = s === "male" ? "♂ オス" : "♀ メス";
+            const selected = form.sex === s;
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => set({ sex: selected ? "" : s })}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                  selected
+                    ? s === "male"
+                      ? "bg-blue-50 border-blue-300 text-blue-600"
+                      : "bg-pink-50 border-pink-300 text-pink-600"
+                    : "bg-gray-50 border-gray-100 text-gray-500"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="flex gap-2 pt-1">
         <button
           onClick={onCancel}
@@ -175,6 +203,7 @@ export default function CatsPage() {
       name: form.name.trim(),
       breed: form.breed.trim() || undefined,
       birthDate: form.birthDate || undefined,
+      sex: form.sex || undefined,
       photoUrl: form.photoUrl || undefined,
     });
     setCats(getCats());
@@ -187,6 +216,7 @@ export default function CatsPage() {
       name: form.name.trim(),
       breed: form.breed.trim() || undefined,
       birthDate: form.birthDate || undefined,
+      sex: form.sex || undefined,
       photoUrl: form.photoUrl || undefined,
       createdAt: new Date().toISOString(),
     });
@@ -238,7 +268,18 @@ export default function CatsPage() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-800 truncate">{cat.name}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-semibold text-gray-800 truncate">{cat.name}</p>
+                    {cat.sex && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                        cat.sex === "male"
+                          ? "bg-blue-50 text-blue-500"
+                          : "bg-pink-50 text-pink-500"
+                      }`}>
+                        {cat.sex === "male" ? "♂" : "♀"}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-400 truncate">
                     {[cat.breed, cat.birthDate].filter(Boolean).join(" / ")}
                   </p>
