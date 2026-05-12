@@ -9,16 +9,27 @@ import Link from "next/link";
 import { Cat, DailyRecord } from "@/lib/types";
 import { getCats, getRecords } from "@/lib/storage";
 
-const EVENT_EMOJI: Record<string, string> = {
-  vomit: "🤢",
-  diarrhea: "💧",
-  hospital: "🏥",
-  custom: "📝",
+const EVENT_LABEL: Record<string, string> = {
+  vomit: "[嘔吐]",
+  diarrhea: "[下痢]",
+  hospital: "[通院]",
+  custom: "[その他]",
+};
+
+const SEX_LABEL: Record<string, string> = {
+  male: "オス",
+  female: "メス",
 };
 
 function PrintTable({ cat, records }: { cat: Cat; records: DailyRecord[] }) {
   const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
   const today = format(new Date(), "yyyy年M月d日", { locale: ja });
+
+  const meta = [
+    cat.breed && `品種：${cat.breed}`,
+    cat.sex && `性別：${SEX_LABEL[cat.sex]}`,
+    cat.birthDate && `生年月日：${cat.birthDate}`,
+  ].filter(Boolean).join("　");
 
   return (
     <div id="print-area">
@@ -30,50 +41,103 @@ function PrintTable({ cat, records }: { cat: Cat; records: DailyRecord[] }) {
             position: fixed;
             top: 0; left: 0;
             width: 100%;
-            font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+            font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+            color: #000;
           }
-          @page { size: A4 landscape; margin: 15mm; }
+          @page { size: A4 landscape; margin: 12mm 15mm; }
+
+          /* 背景色を強制印刷 */
+          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
-        #print-area table { border-collapse: collapse; width: 100%; font-size: 10px; }
-        #print-area th, #print-area td {
-          border: 1px solid #ccc; padding: 4px 6px; text-align: left;
+
+        #print-area {
+          font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+          color: #000;
         }
-        #print-area th { background: #f3e8ff; font-weight: bold; }
+
+        #print-area table {
+          border-collapse: collapse;
+          width: 100%;
+          font-size: 9.5px;
+        }
+
+        #print-area th {
+          background: #222;
+          color: #fff;
+          font-weight: bold;
+          padding: 5px 6px;
+          border: 1px solid #000;
+          text-align: left;
+          white-space: nowrap;
+        }
+
+        #print-area td {
+          border: 1px solid #555;
+          padding: 4px 6px;
+          vertical-align: top;
+          line-height: 1.4;
+        }
+
+        /* 偶数行に薄いグレー縞 */
+        #print-area tbody tr:nth-child(even) td {
+          background: #f0f0f0;
+        }
+
+        /* 投薬済みに打ち消し線 */
+        .med-done { text-decoration: line-through; }
+
+        /* イベントラベル */
+        .event-label {
+          font-weight: bold;
+          margin-right: 2px;
+        }
       `}</style>
 
-      <h2 style={{ fontSize: 16, fontWeight: "bold", marginBottom: 4 }}>
-        猫の健康記録 — {cat.name}
-      </h2>
-      <p style={{ fontSize: 11, color: "#666", marginBottom: 12 }}>
-        {cat.breed ? `品種：${cat.breed}　` : ""}出力日：{today}
-      </p>
+      {/* タイトル */}
+      <div style={{ marginBottom: 8, borderBottom: "2px solid #000", paddingBottom: 4 }}>
+        <div style={{ fontSize: 15, fontWeight: "bold" }}>
+          猫の健康記録　{cat.name}
+        </div>
+        <div style={{ fontSize: 9.5, marginTop: 2 }}>
+          {meta && <span style={{ marginRight: 16 }}>{meta}</span>}
+          <span>出力日：{today}　全{sorted.length}件</span>
+        </div>
+      </div>
 
       <table>
         <thead>
           <tr>
-            <th style={{ width: "10%" }}>日付</th>
-            <th style={{ width: "8%" }}>おしっこ</th>
-            <th style={{ width: "8%" }}>うんち</th>
-            <th style={{ width: "8%" }}>体重(kg)</th>
+            <th style={{ width: "9%" }}>日付</th>
+            <th style={{ width: "7%", textAlign: "center" }}>おしっこ</th>
+            <th style={{ width: "7%", textAlign: "center" }}>うんち</th>
+            <th style={{ width: "7%", textAlign: "center" }}>体重(kg)</th>
             <th style={{ width: "22%" }}>投薬</th>
-            <th style={{ width: "18%" }}>イベント</th>
-            <th style={{ width: "26%" }}>メモ</th>
+            <th style={{ width: "20%" }}>イベント</th>
+            <th style={{ width: "28%" }}>メモ</th>
           </tr>
         </thead>
         <tbody>
           {sorted.map((rec) => {
-            const dateLabel = format(new Date(rec.date), "M/d(E)", { locale: ja });
-            const meds = rec.medications.map((m) => `${m.name}${m.given ? "✓" : ""}`).join("、");
-            const events = rec.events.map((e) => `${EVENT_EMOJI[e.type] ?? ""}${e.label}`).join("、");
+            const dateLabel = format(new Date(rec.date + "T00:00:00"), "M/d(E)", { locale: ja });
+            const events = rec.events
+              .map((e) => `${EVENT_LABEL[e.type] ?? "[その他]"}${e.label !== (EVENT_LABEL[e.type] ?? "").replace(/[\[\]]/g, "") ? e.label : ""}${e.note ? `(${e.note})` : ""}`)
+              .join(" ");
+            const notes = [rec.urineNote, rec.poopNote, rec.note].filter(Boolean).join(" / ");
             return (
               <tr key={rec.id}>
-                <td>{dateLabel}</td>
-                <td style={{ textAlign: "center" }}>{rec.urineCount}</td>
-                <td style={{ textAlign: "center" }}>{rec.poopCount}</td>
-                <td style={{ textAlign: "center" }}>{rec.weight ?? ""}</td>
-                <td>{meds}</td>
-                <td>{events}</td>
-                <td>{[rec.urineNote, rec.poopNote, rec.note].filter(Boolean).join(" / ")}</td>
+                <td style={{ whiteSpace: "nowrap" }}>{dateLabel}</td>
+                <td style={{ textAlign: "center" }}>{rec.urineCount || "−"}</td>
+                <td style={{ textAlign: "center" }}>{rec.poopCount || "−"}</td>
+                <td style={{ textAlign: "center" }}>{rec.weight ?? "−"}</td>
+                <td>
+                  {rec.medications.length === 0 ? "−" : rec.medications.map((m) => (
+                    <span key={m.id} className={m.given ? "med-done" : ""} style={{ display: "block" }}>
+                      {m.given ? "✓ " : "・"}{m.name}
+                    </span>
+                  ))}
+                </td>
+                <td>{events || "−"}</td>
+                <td>{notes || "−"}</td>
               </tr>
             );
           })}
@@ -102,10 +166,10 @@ function PdfPageContent() {
 
   return (
     <main className="p-4 space-y-4">
-      <div className="bg-white rounded-xl p-4 shadow-sm">
+      <div className="bg-white rounded-2xl p-4 shadow-sm">
         <p className="font-semibold text-gray-700">{cat.name}</p>
         <p className="text-sm text-gray-400 mt-1">
-          {records.length}件の記録 / A4横向きで印刷・PDF保存できます
+          {records.length}件の記録 / A4横向き・白黒印刷対応
         </p>
       </div>
 
@@ -115,7 +179,7 @@ function PdfPageContent() {
         <>
           <button
             onClick={() => window.print()}
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-semibold text-white bg-orange-500 active:bg-orange-600"
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-white bg-orange-500 active:bg-orange-600"
           >
             <Printer size={20} />
             印刷 / PDFで保存
@@ -123,7 +187,7 @@ function PdfPageContent() {
           <p className="text-xs text-center text-gray-400">
             印刷ダイアログで「PDFに保存」を選ぶとPDFになります
           </p>
-          <div className="bg-white rounded-xl p-4 shadow-sm overflow-x-auto">
+          <div className="bg-white rounded-2xl p-4 shadow-sm overflow-x-auto">
             <PrintTable cat={cat} records={records} />
           </div>
         </>
