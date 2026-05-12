@@ -8,6 +8,18 @@ import BottomNav from "@/components/BottomNav";
 import { Cat } from "@/lib/types";
 import { getCats, saveCat, deleteCat } from "@/lib/storage";
 
+function calcAge(birthDate: string): string {
+  const birth = new Date(birthDate + "T00:00:00");
+  const now = new Date();
+  let years = now.getFullYear() - birth.getFullYear();
+  let months = now.getMonth() - birth.getMonth();
+  if (now.getDate() < birth.getDate()) months--;
+  if (months < 0) { years--; months += 12; }
+  if (years === 0) return `${months}か月`;
+  if (months === 0) return `${years}歳`;
+  return `${years}歳${months}か月`;
+}
+
 async function resizeImage(file: File, size = 300): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -281,7 +293,7 @@ export default function CatsPage() {
                     )}
                   </div>
                   <p className="text-xs text-gray-400 truncate">
-                    {[cat.breed, cat.birthDate].filter(Boolean).join(" / ")}
+                    {[cat.breed, cat.birthDate ? calcAge(cat.birthDate) : undefined].filter(Boolean).join(" / ")}
                   </p>
                 </div>
                 <button
