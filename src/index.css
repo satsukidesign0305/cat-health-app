@@ -7,6 +7,7 @@ body {
   color: #1f2937;
 }
 
+/* iOS のホームバー分の余白 */
 main {
   padding-bottom: env(safe-area-inset-bottom);
 }

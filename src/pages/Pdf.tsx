@@ -1,13 +1,10 @@
-"use client";
-
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useSearchParams, Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { ChevronLeft, Printer } from "lucide-react";
-import Link from "next/link";
-import { Cat, DailyRecord } from "@/lib/types";
-import { getCats, getRecords } from "@/lib/storage";
+import { getCats, getRecords } from "../lib/db";
+import type { Cat, DailyRecord } from "../lib/types";
 
 const EVENT_LABEL: Record<string, string> = {
   vomit: "[嘔吐]",
@@ -21,10 +18,10 @@ const SEX_LABEL: Record<string, string> = {
   female: "メス",
 };
 
+/** 白黒印刷に最適化した印刷テーブル */
 function PrintTable({ cat, records }: { cat: Cat; records: DailyRecord[] }) {
   const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
   const today = format(new Date(), "yyyy年M月d日", { locale: ja });
-
   const meta = [
     cat.breed && `品種：${cat.breed}`,
     cat.sex && `性別：${SEX_LABEL[cat.sex]}`,
@@ -45,59 +42,21 @@ function PrintTable({ cat, records }: { cat: Cat; records: DailyRecord[] }) {
             color: #000;
           }
           @page { size: A4 landscape; margin: 12mm 15mm; }
-
-          /* 背景色を強制印刷 */
           * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
-
-        #print-area {
-          font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
-          color: #000;
-        }
-
-        #print-area table {
-          border-collapse: collapse;
-          width: 100%;
-          font-size: 9.5px;
-        }
-
+        #print-area { font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif; color: #000; }
+        #print-area table { border-collapse: collapse; width: 100%; font-size: 9.5px; }
         #print-area th {
-          background: #222;
-          color: #fff;
-          font-weight: bold;
-          padding: 5px 6px;
-          border: 1px solid #000;
-          text-align: left;
-          white-space: nowrap;
+          background: #222; color: #fff; font-weight: bold;
+          padding: 5px 6px; border: 1px solid #000; text-align: left; white-space: nowrap;
         }
-
-        #print-area td {
-          border: 1px solid #555;
-          padding: 4px 6px;
-          vertical-align: top;
-          line-height: 1.4;
-        }
-
-        /* 偶数行に薄いグレー縞 */
-        #print-area tbody tr:nth-child(even) td {
-          background: #f0f0f0;
-        }
-
-        /* 投薬済みに打ち消し線 */
+        #print-area td { border: 1px solid #555; padding: 4px 6px; vertical-align: top; line-height: 1.4; }
+        #print-area tbody tr:nth-child(even) td { background: #f0f0f0; }
         .med-done { text-decoration: line-through; }
-
-        /* イベントラベル */
-        .event-label {
-          font-weight: bold;
-          margin-right: 2px;
-        }
       `}</style>
 
-      {/* タイトル */}
       <div style={{ marginBottom: 8, borderBottom: "2px solid #000", paddingBottom: 4 }}>
-        <div style={{ fontSize: 15, fontWeight: "bold" }}>
-          猫の健康記録　{cat.name}
-        </div>
+        <div style={{ fontSize: 15, fontWeight: "bold" }}>猫の健康記録　{cat.name}</div>
         <div style={{ fontSize: 9.5, marginTop: 2 }}>
           {meta && <span style={{ marginRight: 16 }}>{meta}</span>}
           <span>出力日：{today}　全{sorted.length}件</span>
@@ -120,7 +79,7 @@ function PrintTable({ cat, records }: { cat: Cat; records: DailyRecord[] }) {
           {sorted.map((rec) => {
             const dateLabel = format(new Date(rec.date + "T00:00:00"), "M/d(E)", { locale: ja });
             const events = rec.events
-              .map((e) => `${EVENT_LABEL[e.type] ?? "[その他]"}${e.label !== (EVENT_LABEL[e.type] ?? "").replace(/[\[\]]/g, "") ? e.label : ""}${e.note ? `(${e.note})` : ""}`)
+              .map((e) => `${EVENT_LABEL[e.type] ?? "[その他]"}${e.note ? `(${e.note})` : ""}`)
               .join(" ");
             const notes = [rec.urineNote, rec.poopNote, rec.note].filter(Boolean).join(" / ");
             return (
@@ -147,67 +106,73 @@ function PrintTable({ cat, records }: { cat: Cat; records: DailyRecord[] }) {
   );
 }
 
-function PdfPageContent() {
-  const params = useSearchParams();
-  const catId = params.get("catId") ?? "";
+export default function Pdf() {
+  const [searchParams] = useSearchParams();
+  const catId = searchParams.get("catId") ?? "";
   const [cat, setCat] = useState<Cat | null>(null);
   const [records, setRecords] = useState<DailyRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const cats = getCats();
-    const found = cats.find((c) => c.id === catId) ?? null;
-    setCat(found);
-    if (found) setRecords(getRecords(found.id));
+    async function load() {
+      const cats = await getCats();
+      const found = cats.find((c) => c.id === catId) ?? null;
+      setCat(found);
+      if (found) setRecords(await getRecords(found.id));
+      setLoading(false);
+    }
+    load();
   }, [catId]);
 
-  if (!cat) {
-    return <p className="text-center text-gray-400 mt-20">猫が見つかりません</p>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-400">読み込み中…</p>
+      </div>
+    );
   }
 
   return (
-    <main className="p-4 space-y-4">
-      <div className="bg-white rounded-2xl p-4 shadow-sm">
-        <p className="font-semibold text-gray-700">{cat.name}</p>
-        <p className="text-sm text-gray-400 mt-1">
-          {records.length}件の記録 / A4横向き・白黒印刷対応
-        </p>
-      </div>
-
-      {records.length === 0 ? (
-        <p className="text-center text-gray-400">記録がありません</p>
-      ) : (
-        <>
-          <button
-            onClick={() => window.print()}
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-white bg-orange-500 active:bg-orange-600"
-          >
-            <Printer size={20} />
-            印刷 / PDFで保存
-          </button>
-          <p className="text-xs text-center text-gray-400">
-            印刷ダイアログで「PDFに保存」を選ぶとPDFになります
-          </p>
-          <div className="bg-white rounded-2xl p-4 shadow-sm overflow-x-auto">
-            <PrintTable cat={cat} records={records} />
-          </div>
-        </>
-      )}
-    </main>
-  );
-}
-
-export default function PdfPage() {
-  return (
     <div className="flex flex-col min-h-screen">
       <header className="bg-orange-500 text-white px-4 py-4 flex items-center gap-3 print:hidden">
-        <Link href="/history" className="p-1">
-          <ChevronLeft size={22} />
-        </Link>
+        <Link to="/history" className="p-1"><ChevronLeft size={22} /></Link>
         <h1 className="text-lg font-bold">PDF出力</h1>
       </header>
-      <Suspense fallback={<p className="text-center mt-20 text-gray-400">読み込み中…</p>}>
-        <PdfPageContent />
-      </Suspense>
+
+      <main className="p-4 space-y-4">
+        {!cat ? (
+          <p className="text-center text-gray-400 mt-20">猫が見つかりません</p>
+        ) : (
+          <>
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <p className="font-semibold text-gray-700">{cat.name}</p>
+              <p className="text-sm text-gray-400 mt-1">
+                {records.length}件の記録 / A4横向き・白黒印刷対応
+              </p>
+            </div>
+
+            {records.length === 0 ? (
+              <p className="text-center text-gray-400">記録がありません</p>
+            ) : (
+              <>
+                <button
+                  onClick={() => window.print()}
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-white bg-orange-500 active:bg-orange-600"
+                >
+                  <Printer size={20} />
+                  印刷 / PDFで保存
+                </button>
+                <p className="text-xs text-center text-gray-400">
+                  印刷ダイアログで「PDFに保存」を選ぶとPDFになります
+                </p>
+                <div className="bg-white rounded-2xl p-4 shadow-sm overflow-x-auto">
+                  <PrintTable cat={cat} records={records} />
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </main>
     </div>
   );
 }

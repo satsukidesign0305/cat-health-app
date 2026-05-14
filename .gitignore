@@ -6,12 +6,12 @@
 # testing
 /coverage
 
-# next.js
+# ビルド成果物
+/dist
+
+# next.js（移行済み）
 /.next/
 /out/
-
-# production
-/build
 
 # misc
 .DS_Store

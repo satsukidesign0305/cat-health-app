@@ -1,13 +1,12 @@
-"use client";
-
 import { useState, useEffect, useRef } from "react";
 import { v4 as uuid } from "uuid";
 import { Cat as CatIcon, Plus, Trash2, ChevronLeft, Pencil, Check, X, Camera } from "lucide-react";
-import Link from "next/link";
-import BottomNav from "@/components/BottomNav";
-import { Cat } from "@/lib/types";
-import { getCats, saveCat, deleteCat } from "@/lib/storage";
+import { Link } from "react-router-dom";
+import BottomNav from "../components/BottomNav";
+import { getCats, saveCat, deleteCat } from "../lib/db";
+import type { Cat } from "../lib/types";
 
+/** 誕生日から現在の年齢を計算する */
 function calcAge(birthDate: string): string {
   const birth = new Date(birthDate + "T00:00:00");
   const now = new Date();
@@ -20,6 +19,7 @@ function calcAge(birthDate: string): string {
   return `${years}歳${months}か月`;
 }
 
+/** 画像を canvas でリサイズして base64 に変換する */
 async function resizeImage(file: File, size = 300): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -59,21 +59,14 @@ function catToForm(cat: Cat): CatFormState {
   };
 }
 
-// 写真選択ボタン＋アバター表示
-function AvatarPicker({
-  photoUrl,
-  onChange,
-}: {
-  photoUrl: string;
-  onChange: (url: string) => void;
-}) {
+/** アバター表示と写真選択ボタン */
+function AvatarPicker({ photoUrl, onChange }: { photoUrl: string; onChange: (url: string) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const resized = await resizeImage(file);
-    onChange(resized);
+    onChange(await resizeImage(file));
     e.target.value = "";
   }
 
@@ -84,28 +77,20 @@ function AvatarPicker({
         onClick={() => inputRef.current?.click()}
         className="relative w-20 h-20 rounded-full overflow-hidden bg-orange-100 flex items-center justify-center"
       >
-        {photoUrl ? (
-          <img src={photoUrl} alt="cat" className="w-full h-full object-cover" />
-        ) : (
-          <CatIcon size={32} className="text-orange-400" />
-        )}
+        {photoUrl
+          ? <img src={photoUrl} alt="cat" className="w-full h-full object-cover" />
+          : <CatIcon size={32} className="text-orange-400" />}
         <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 active:opacity-100 transition-opacity">
           <Camera size={20} className="text-white" />
         </div>
       </button>
       <span className="text-xs text-gray-400">タップして写真を変更</span>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFile}
-      />
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
     </div>
   );
 }
 
-// 編集・追加フォーム
+/** 猫の追加・編集フォーム */
 function CatForm({
   initial,
   onSave,
@@ -115,11 +100,8 @@ function CatForm({
   onSave: (form: CatFormState) => void;
   onCancel: () => void;
 }) {
-  const [form, setForm] = useState<CatFormState>(initial);
-
-  function set(patch: Partial<CatFormState>) {
-    setForm((f) => ({ ...f, ...patch }));
-  }
+  const [form, setForm] = useState(initial);
+  const set = (patch: Partial<CatFormState>) => setForm((f) => ({ ...f, ...patch }));
 
   return (
     <div className="space-y-4">
@@ -153,12 +135,10 @@ function CatForm({
           onChange={(e) => set({ birthDate: e.target.value })}
         />
       </div>
-
       <div>
         <label className="text-xs text-gray-400">性別</label>
         <div className="flex gap-2 mt-1">
           {(["male", "female"] as const).map((s) => {
-            const label = s === "male" ? "♂ オス" : "♀ メス";
             const selected = form.sex === s;
             return (
               <button
@@ -173,7 +153,7 @@ function CatForm({
                     : "bg-gray-50 border-gray-100 text-gray-500"
                 }`}
               >
-                {label}
+                {s === "male" ? "♂ オス" : "♀ メス"}
               </button>
             );
           })}
@@ -199,31 +179,33 @@ function CatForm({
   );
 }
 
-export default function CatsPage() {
+export default function Cats() {
   const [cats, setCats] = useState<Cat[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
   useEffect(() => {
-    setCats(getCats());
+    getCats().then(setCats).finally(() => setLoading(false));
   }, []);
 
-  function handleSaveEdit(id: string, form: CatFormState) {
+  async function handleSaveEdit(id: string, form: CatFormState) {
     const existing = cats.find((c) => c.id === id)!;
-    saveCat({
+    const updated: Cat = {
       ...existing,
       name: form.name.trim(),
       breed: form.breed.trim() || undefined,
       birthDate: form.birthDate || undefined,
       sex: form.sex || undefined,
       photoUrl: form.photoUrl || undefined,
-    });
-    setCats(getCats());
+    };
+    await saveCat(updated);
+    setCats(await getCats());
     setEditingId(null);
   }
 
-  function handleAdd(form: CatFormState) {
-    saveCat({
+  async function handleAdd(form: CatFormState) {
+    const cat: Cat = {
       id: uuid(),
       name: form.name.trim(),
       breed: form.breed.trim() || undefined,
@@ -231,24 +213,31 @@ export default function CatsPage() {
       sex: form.sex || undefined,
       photoUrl: form.photoUrl || undefined,
       createdAt: new Date().toISOString(),
-    });
-    setCats(getCats());
+    };
+    await saveCat(cat);
+    setCats(await getCats());
     setShowAddForm(false);
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     if (!confirm("この猫のデータをすべて削除しますか？")) return;
-    deleteCat(id);
-    setCats(getCats());
+    await deleteCat(id);
+    setCats(await getCats());
     if (editingId === id) setEditingId(null);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-400">読み込み中…</p>
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col min-h-screen pb-20">
       <header className="bg-orange-500 text-white px-4 py-4 flex items-center gap-3">
-        <Link href="/" className="p-1">
-          <ChevronLeft size={22} />
-        </Link>
+        <Link to="/" className="p-1"><ChevronLeft size={22} /></Link>
         <h1 className="text-lg font-bold">猫の管理</h1>
       </header>
 
@@ -260,7 +249,6 @@ export default function CatsPage() {
         {cats.map((cat) => (
           <div key={cat.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
             {editingId === cat.id ? (
-              // 編集フォーム
               <div className="p-4">
                 <p className="font-semibold text-gray-700 mb-4">編集中</p>
                 <CatForm
@@ -270,30 +258,27 @@ export default function CatsPage() {
                 />
               </div>
             ) : (
-              // 通常表示
               <div className="flex items-center gap-3 p-4">
                 <div className="w-12 h-12 rounded-full overflow-hidden bg-orange-100 flex-shrink-0 flex items-center justify-center">
-                  {cat.photoUrl ? (
-                    <img src={cat.photoUrl} alt={cat.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <CatIcon size={22} className="text-orange-400" />
-                  )}
+                  {cat.photoUrl
+                    ? <img src={cat.photoUrl} alt={cat.name} className="w-full h-full object-cover" />
+                    : <CatIcon size={22} className="text-orange-400" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <p className="font-semibold text-gray-800 truncate">{cat.name}</p>
                     {cat.sex && (
                       <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
-                        cat.sex === "male"
-                          ? "bg-blue-50 text-blue-500"
-                          : "bg-pink-50 text-pink-500"
+                        cat.sex === "male" ? "bg-blue-50 text-blue-500" : "bg-pink-50 text-pink-500"
                       }`}>
                         {cat.sex === "male" ? "♂" : "♀"}
                       </span>
                     )}
                   </div>
                   <p className="text-xs text-gray-400 truncate">
-                    {[cat.breed, cat.birthDate ? calcAge(cat.birthDate) : undefined].filter(Boolean).join(" / ")}
+                    {[cat.breed, cat.birthDate ? calcAge(cat.birthDate) : undefined]
+                      .filter(Boolean)
+                      .join(" / ")}
                   </p>
                 </div>
                 <button
@@ -302,10 +287,7 @@ export default function CatsPage() {
                 >
                   <Pencil size={17} />
                 </button>
-                <button
-                  onClick={() => handleDelete(cat.id)}
-                  className="text-gray-300 p-2"
-                >
+                <button onClick={() => handleDelete(cat.id)} className="text-gray-300 p-2">
                   <Trash2 size={17} />
                 </button>
               </div>
@@ -327,8 +309,7 @@ export default function CatsPage() {
             onClick={() => { setShowAddForm(true); setEditingId(null); }}
             className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-orange-200 text-orange-400 rounded-2xl py-4"
           >
-            <Plus size={20} />
-            猫を追加する
+            <Plus size={20} /> 猫を追加する
           </button>
         )}
       </main>

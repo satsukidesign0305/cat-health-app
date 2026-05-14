@@ -1,7 +1,4 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useLocation } from "react-router-dom";
 import { Cat, ClipboardList, BookOpen } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -11,15 +8,16 @@ const NAV_ITEMS = [
 ];
 
 export default function BottomNav() {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around max-w-lg mx-auto pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around max-w-lg mx-auto">
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
         const active = pathname === href;
         return (
           <Link
             key={href}
-            href={href}
+            to={href}
             className={`flex flex-col items-center py-3 px-4 text-xs gap-1 ${
               active ? "text-orange-500" : "text-gray-400"
             }`}

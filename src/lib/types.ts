@@ -3,9 +3,9 @@ export interface Cat {
   name: string;
   breed?: string;
   birthDate?: string;
-  color?: string;
   sex?: "male" | "female";
   photoUrl?: string;
+  color?: string;
   createdAt: string;
 }
 
