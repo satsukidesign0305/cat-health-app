@@ -95,10 +95,12 @@ function CatForm({
   initial,
   onSave,
   onCancel,
+  saving = false,
 }: {
   initial: CatFormState;
   onSave: (form: CatFormState) => void;
   onCancel: () => void;
+  saving?: boolean;
 }) {
   const [form, setForm] = useState(initial);
   const set = (patch: Partial<CatFormState>) => setForm((f) => ({ ...f, ...patch }));
@@ -169,10 +171,10 @@ function CatForm({
         </button>
         <button
           onClick={() => form.name.trim() && onSave(form)}
-          disabled={!form.name.trim()}
+          disabled={!form.name.trim() || saving}
           className="flex-1 bg-orange-500 text-white rounded-xl py-2.5 text-sm disabled:opacity-40 flex items-center justify-center gap-1"
         >
-          <Check size={15} /> 保存する
+          <Check size={15} /> {saving ? "保存中…" : "保存する"}
         </button>
       </div>
     </div>
@@ -182,6 +184,7 @@ function CatForm({
 export default function Cats() {
   const [cats, setCats] = useState<Cat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -190,6 +193,7 @@ export default function Cats() {
   }, []);
 
   async function handleSaveEdit(id: string, form: CatFormState) {
+    if (saving) return;
     const existing = cats.find((c) => c.id === id)!;
     const updated: Cat = {
       ...existing,
@@ -199,12 +203,21 @@ export default function Cats() {
       sex: form.sex || undefined,
       photoUrl: form.photoUrl || undefined,
     };
-    await saveCat(updated);
-    setCats(await getCats());
-    setEditingId(null);
+    setSaving(true);
+    try {
+      await saveCat(updated);
+      setCats(await getCats());
+      setEditingId(null);
+    } catch (err) {
+      console.error("保存エラー:", err);
+      alert("保存に失敗しました。もう一度お試しください。");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleAdd(form: CatFormState) {
+    if (saving) return;
     const cat: Cat = {
       id: uuid(),
       name: form.name.trim(),
@@ -214,9 +227,17 @@ export default function Cats() {
       photoUrl: form.photoUrl || undefined,
       createdAt: new Date().toISOString(),
     };
-    await saveCat(cat);
-    setCats(await getCats());
-    setShowAddForm(false);
+    setSaving(true);
+    try {
+      await saveCat(cat);
+      setCats(await getCats());
+      setShowAddForm(false);
+    } catch (err) {
+      console.error("保存エラー:", err);
+      alert("保存に失敗しました。もう一度お試しください。");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleDelete(id: string) {
@@ -255,6 +276,7 @@ export default function Cats() {
                   initial={catToForm(cat)}
                   onSave={(form) => handleSaveEdit(cat.id, form)}
                   onCancel={() => setEditingId(null)}
+                  saving={saving}
                 />
               </div>
             ) : (
@@ -302,6 +324,7 @@ export default function Cats() {
               initial={emptyForm()}
               onSave={handleAdd}
               onCancel={() => setShowAddForm(false)}
+              saving={saving}
             />
           </div>
         ) : (
