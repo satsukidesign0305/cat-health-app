@@ -32,6 +32,9 @@
 - コミットはこまめに、意味のある単位で行う
 - `.env` などの機密情報を含むファイルは絶対にコミットしない
 
+## GitHubリポジトリ
+https://github.com/satsukidesign0305/cat-health-app
+
 ## デプロイ情報
 
 - 本番URL：https://cat-health-app-coral.vercel.app
