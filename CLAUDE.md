@@ -32,6 +32,11 @@
 - コミットはこまめに、意味のある単位で行う
 - `.env` などの機密情報を含むファイルは絶対にコミットしない
 
+## デプロイ情報
+
+- 本番URL：https://cat-health-app-coral.vercel.app
+- Supabaseプロジェクト名：cat-health-app
+
 ## 技術スタック
 
 （プロジェクト開始時に記載する）
