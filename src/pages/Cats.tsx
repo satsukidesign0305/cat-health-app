@@ -207,7 +207,7 @@ function CatForm({
                     : "bg-gray-50 border-gray-100 text-gray-500"
                 }`}
               >
-                {s === "male" ? "♂ オス" : "♀ メス"}
+                {s === "male" ? "♂︎ オス" : "♀︎ メス"}
               </button>
             );
           })}
@@ -493,7 +493,7 @@ export default function Cats() {
                       <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
                         cat.sex === "male" ? "bg-blue-50 text-blue-500" : "bg-pink-50 text-pink-500"
                       }`}>
-                        {cat.sex === "male" ? "♂" : "♀"}
+                        {cat.sex === "male" ? "♂︎" : "♀︎"}
                       </span>
                     )}
                   </div>
