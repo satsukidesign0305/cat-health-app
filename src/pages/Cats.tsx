@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { v4 as uuid } from "uuid";
-import { Cat as CatIcon, Plus, Trash2, ChevronLeft, Pencil, Check, X, Camera } from "lucide-react";
+import { Cat as CatIcon, Plus, Trash2, ChevronLeft, Pencil, Check, X, Camera, Printer } from "lucide-react";
 import { Link } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
 import { getCats, saveCat, deleteCat } from "../lib/db";
@@ -503,6 +503,12 @@ export default function Cats() {
                       .join(" / ")}
                   </p>
                 </div>
+                <Link
+                  to={`/profile-pdf?catId=${cat.id}`}
+                  className="text-gray-300 p-2"
+                >
+                  <Printer size={17} />
+                </Link>
                 <button
                   onClick={() => { setEditingId(cat.id); setShowAddForm(false); }}
                   className="text-gray-400 p-2"
