@@ -55,13 +55,42 @@ function PrintTable({ cat, records }: { cat: Cat; records: DailyRecord[] }) {
         .med-done { text-decoration: line-through; }
       `}</style>
 
-      <div style={{ marginBottom: 8, borderBottom: "2px solid #000", paddingBottom: 4 }}>
+      <div style={{ marginBottom: 6, borderBottom: "2px solid #000", paddingBottom: 4 }}>
         <div style={{ fontSize: 15, fontWeight: "bold" }}>猫の健康記録　{cat.name}</div>
         <div style={{ fontSize: 9.5, marginTop: 2 }}>
           {meta && <span style={{ marginRight: 16 }}>{meta}</span>}
           <span>出力日：{today}　全{sorted.length}件</span>
         </div>
       </div>
+
+      {/* プロフィール情報 */}
+      {(cat.vetName || cat.medicalHistory || cat.allergies || cat.foodNotes) && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", marginBottom: 8, fontSize: 9 }}>
+          {cat.vetName && (
+            <div style={{ border: "1px solid #aaa", borderRadius: 3, padding: "3px 6px" }}>
+              <span style={{ fontWeight: "bold" }}>🏥 かかりつけ医：</span>
+              {cat.vetName}
+              {cat.vetPhone && <span style={{ marginLeft: 6 }}>☎ {cat.vetPhone}</span>}
+              {cat.vetAddress && <span style={{ marginLeft: 6 }}>📍 {cat.vetAddress}</span>}
+            </div>
+          )}
+          {cat.allergies && (
+            <div style={{ border: "1px solid #aaa", borderRadius: 3, padding: "3px 6px" }}>
+              <span style={{ fontWeight: "bold" }}>⚠️ アレルギー・注意：</span>{cat.allergies}
+            </div>
+          )}
+          {cat.medicalHistory && (
+            <div style={{ border: "1px solid #aaa", borderRadius: 3, padding: "3px 6px" }}>
+              <span style={{ fontWeight: "bold" }}>💉 既往歴：</span>{cat.medicalHistory}
+            </div>
+          )}
+          {cat.foodNotes && (
+            <div style={{ border: "1px solid #aaa", borderRadius: 3, padding: "3px 6px" }}>
+              <span style={{ fontWeight: "bold" }}>🍽️ 食事：</span>{cat.foodNotes}
+            </div>
+          )}
+        </div>
+      )}
 
       <table>
         <thead>

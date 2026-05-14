@@ -43,10 +43,16 @@ interface CatFormState {
   birthDate: string;
   sex: "male" | "female" | "";
   photoUrl: string;
+  vetName: string;
+  vetPhone: string;
+  vetAddress: string;
+  medicalHistory: string;
+  allergies: string;
+  foodNotes: string;
 }
 
 function emptyForm(): CatFormState {
-  return { name: "", breed: "", birthDate: "", sex: "", photoUrl: "" };
+  return { name: "", breed: "", birthDate: "", sex: "", photoUrl: "", vetName: "", vetPhone: "", vetAddress: "", medicalHistory: "", allergies: "", foodNotes: "" };
 }
 
 function catToForm(cat: Cat): CatFormState {
@@ -56,6 +62,12 @@ function catToForm(cat: Cat): CatFormState {
     birthDate: cat.birthDate ?? "",
     sex: cat.sex ?? "",
     photoUrl: cat.photoUrl ?? "",
+    vetName: cat.vetName ?? "",
+    vetPhone: cat.vetPhone ?? "",
+    vetAddress: cat.vetAddress ?? "",
+    medicalHistory: cat.medicalHistory ?? "",
+    allergies: cat.allergies ?? "",
+    foodNotes: cat.foodNotes ?? "",
   };
 }
 
@@ -162,6 +174,83 @@ function CatForm({
         </div>
       </div>
 
+      {/* かかりつけ医 */}
+      <div className="pt-2 border-t border-gray-100">
+        <p className="text-xs font-semibold text-gray-400 mb-3">🏥 かかりつけ医</p>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-gray-400">病院名</label>
+            <input
+              className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
+              placeholder="例：○○動物病院"
+              value={form.vetName}
+              onChange={(e) => set({ vetName: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400">電話番号</label>
+            <input
+              type="tel"
+              className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
+              placeholder="例：03-1234-5678"
+              value={form.vetPhone}
+              onChange={(e) => set({ vetPhone: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400">住所</label>
+            <input
+              className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
+              placeholder="例：東京都渋谷区○○1-2-3"
+              value={form.vetAddress}
+              onChange={(e) => set({ vetAddress: e.target.value })}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 健康情報 */}
+      <div className="pt-2 border-t border-gray-100">
+        <p className="text-xs font-semibold text-gray-400 mb-3">💉 健康情報</p>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-gray-400">既往歴</label>
+            <textarea
+              className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm resize-none"
+              rows={3}
+              placeholder="例：2023年 尿路結石で手術、慢性腎臓病"
+              value={form.medicalHistory}
+              onChange={(e) => set({ medicalHistory: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400">アレルギー・注意事項</label>
+            <textarea
+              className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm resize-none"
+              rows={2}
+              placeholder="例：チキンアレルギー、ラテックスアレルギー"
+              value={form.allergies}
+              onChange={(e) => set({ allergies: e.target.value })}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 食事情報 */}
+      <div className="pt-2 border-t border-gray-100">
+        <p className="text-xs font-semibold text-gray-400 mb-3">🍽️ 食事</p>
+        <div>
+          <label className="text-xs text-gray-400">いつものごはん・おやつ</label>
+          <textarea
+            className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm resize-none"
+            rows={3}
+            placeholder="例：ロイヤルカナン 腎臓サポート（朝晩各40g）、おやつ：ちゅーる週3回"
+            value={form.foodNotes}
+            onChange={(e) => set({ foodNotes: e.target.value })}
+          />
+        </div>
+      </div>
+
       <div className="flex gap-2 pt-1">
         <button
           onClick={onCancel}
@@ -202,6 +291,12 @@ export default function Cats() {
       birthDate: form.birthDate || undefined,
       sex: form.sex || undefined,
       photoUrl: form.photoUrl || undefined,
+      vetName: form.vetName.trim() || undefined,
+      vetPhone: form.vetPhone.trim() || undefined,
+      vetAddress: form.vetAddress.trim() || undefined,
+      medicalHistory: form.medicalHistory.trim() || undefined,
+      allergies: form.allergies.trim() || undefined,
+      foodNotes: form.foodNotes.trim() || undefined,
     };
     setSaving(true);
     try {
@@ -225,6 +320,12 @@ export default function Cats() {
       birthDate: form.birthDate || undefined,
       sex: form.sex || undefined,
       photoUrl: form.photoUrl || undefined,
+      vetName: form.vetName.trim() || undefined,
+      vetPhone: form.vetPhone.trim() || undefined,
+      vetAddress: form.vetAddress.trim() || undefined,
+      medicalHistory: form.medicalHistory.trim() || undefined,
+      allergies: form.allergies.trim() || undefined,
+      foodNotes: form.foodNotes.trim() || undefined,
       createdAt: new Date().toISOString(),
     };
     setSaving(true);

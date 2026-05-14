@@ -6,6 +6,15 @@ export interface Cat {
   sex?: "male" | "female";
   photoUrl?: string;
   color?: string;
+  // かかりつけ医
+  vetName?: string;
+  vetPhone?: string;
+  vetAddress?: string;
+  // 健康情報
+  medicalHistory?: string;
+  allergies?: string;
+  // 食事情報
+  foodNotes?: string;
   createdAt: string;
 }
 

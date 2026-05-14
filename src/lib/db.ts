@@ -14,6 +14,12 @@ function rowToCat(row: any): Cat {
     sex: row.sex ?? undefined,
     photoUrl: row.photo_url ?? undefined,
     color: row.color ?? undefined,
+    vetName: row.vet_name ?? undefined,
+    vetPhone: row.vet_phone ?? undefined,
+    vetAddress: row.vet_address ?? undefined,
+    medicalHistory: row.medical_history ?? undefined,
+    allergies: row.allergies ?? undefined,
+    foodNotes: row.food_notes ?? undefined,
     createdAt: row.created_at,
   };
 }
@@ -29,6 +35,12 @@ function catToRow(cat: Cat, userId: string) {
     sex: cat.sex ?? null,
     photo_url: cat.photoUrl ?? null,
     color: cat.color ?? null,
+    vet_name: cat.vetName ?? null,
+    vet_phone: cat.vetPhone ?? null,
+    vet_address: cat.vetAddress ?? null,
+    medical_history: cat.medicalHistory ?? null,
+    allergies: cat.allergies ?? null,
+    food_notes: cat.foodNotes ?? null,
     created_at: cat.createdAt,
   };
 }
