@@ -64,7 +64,7 @@ function PrintTable({ cat, records }: { cat: Cat; records: DailyRecord[] }) {
       </div>
 
       {/* プロフィール情報 */}
-      {(cat.vetName || cat.medicalHistory || cat.allergies || cat.foodNotes) && (
+      {(cat.vetName || (cat.medicalHistory && cat.medicalHistory.length > 0) || cat.allergies || (cat.foodNotes && cat.foodNotes.length > 0)) && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", marginBottom: 8, fontSize: 9 }}>
           {cat.vetName && (
             <div style={{ border: "1px solid #aaa", borderRadius: 3, padding: "3px 6px" }}>
@@ -79,14 +79,20 @@ function PrintTable({ cat, records }: { cat: Cat; records: DailyRecord[] }) {
               <span style={{ fontWeight: "bold" }}>⚠️ アレルギー・注意：</span>{cat.allergies}
             </div>
           )}
-          {cat.medicalHistory && (
+          {cat.medicalHistory && cat.medicalHistory.length > 0 && (
             <div style={{ border: "1px solid #aaa", borderRadius: 3, padding: "3px 6px" }}>
-              <span style={{ fontWeight: "bold" }}>💉 既往歴：</span>{cat.medicalHistory}
+              <span style={{ fontWeight: "bold" }}>💉 既往歴：</span>
+              {cat.medicalHistory.map((m, i) => (
+                <span key={m.id}>{i > 0 ? "　" : ""}{m.date && `${m.date} `}{m.description}</span>
+              ))}
             </div>
           )}
-          {cat.foodNotes && (
+          {cat.foodNotes && cat.foodNotes.length > 0 && (
             <div style={{ border: "1px solid #aaa", borderRadius: 3, padding: "3px 6px" }}>
-              <span style={{ fontWeight: "bold" }}>🍽️ 食事：</span>{cat.foodNotes}
+              <span style={{ fontWeight: "bold" }}>🍽️ 食事：</span>
+              {cat.foodNotes.map((f, i) => (
+                <span key={f.id}>{i > 0 ? "　" : ""}{f.name}{f.note && `（${f.note}）`}</span>
+              ))}
             </div>
           )}
         </div>

@@ -1,3 +1,15 @@
+export interface MedicalHistoryItem {
+  id: string;
+  date: string;        // 例："2023年5月"
+  description: string; // 例："尿路結石で手術"
+}
+
+export interface FoodItem {
+  id: string;
+  name: string; // 例："ロイヤルカナン 腎臓サポート"
+  note: string; // 例："朝晩各40g"
+}
+
 export interface Cat {
   id: string;
   name: string;
@@ -11,10 +23,10 @@ export interface Cat {
   vetPhone?: string;
   vetAddress?: string;
   // 健康情報
-  medicalHistory?: string;
+  medicalHistory?: MedicalHistoryItem[];
   allergies?: string;
   // 食事情報
-  foodNotes?: string;
+  foodNotes?: FoodItem[];
   createdAt: string;
 }
 

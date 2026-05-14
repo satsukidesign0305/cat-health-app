@@ -4,7 +4,7 @@ import { Cat as CatIcon, Plus, Trash2, ChevronLeft, Pencil, Check, X, Camera } f
 import { Link } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
 import { getCats, saveCat, deleteCat } from "../lib/db";
-import type { Cat } from "../lib/types";
+import type { Cat, MedicalHistoryItem, FoodItem } from "../lib/types";
 
 /** 誕生日から現在の年齢を計算する */
 function calcAge(birthDate: string): string {
@@ -46,13 +46,17 @@ interface CatFormState {
   vetName: string;
   vetPhone: string;
   vetAddress: string;
-  medicalHistory: string;
+  medicalHistory: MedicalHistoryItem[];
   allergies: string;
-  foodNotes: string;
+  foodNotes: FoodItem[];
 }
 
 function emptyForm(): CatFormState {
-  return { name: "", breed: "", birthDate: "", sex: "", photoUrl: "", vetName: "", vetPhone: "", vetAddress: "", medicalHistory: "", allergies: "", foodNotes: "" };
+  return {
+    name: "", breed: "", birthDate: "", sex: "", photoUrl: "",
+    vetName: "", vetPhone: "", vetAddress: "",
+    medicalHistory: [], allergies: "", foodNotes: [],
+  };
 }
 
 function catToForm(cat: Cat): CatFormState {
@@ -65,9 +69,9 @@ function catToForm(cat: Cat): CatFormState {
     vetName: cat.vetName ?? "",
     vetPhone: cat.vetPhone ?? "",
     vetAddress: cat.vetAddress ?? "",
-    medicalHistory: cat.medicalHistory ?? "",
+    medicalHistory: cat.medicalHistory ?? [],
     allergies: cat.allergies ?? "",
-    foodNotes: cat.foodNotes ?? "",
+    foodNotes: cat.foodNotes ?? [],
   };
 }
 
@@ -117,10 +121,46 @@ function CatForm({
   const [form, setForm] = useState(initial);
   const set = (patch: Partial<CatFormState>) => setForm((f) => ({ ...f, ...patch }));
 
+  // 既往歴の入力下書き
+  const [medInput, setMedInput] = useState({ date: "", description: "" });
+  // 食事の入力下書き
+  const [foodInput, setFoodInput] = useState({ name: "", note: "" });
+
+  function addMedical() {
+    if (!medInput.description.trim()) return;
+    const item: MedicalHistoryItem = {
+      id: uuid(),
+      date: medInput.date.trim(),
+      description: medInput.description.trim(),
+    };
+    set({ medicalHistory: [...form.medicalHistory, item] });
+    setMedInput({ date: "", description: "" });
+  }
+
+  function removeMedical(id: string) {
+    set({ medicalHistory: form.medicalHistory.filter((m) => m.id !== id) });
+  }
+
+  function addFood() {
+    if (!foodInput.name.trim()) return;
+    const item: FoodItem = {
+      id: uuid(),
+      name: foodInput.name.trim(),
+      note: foodInput.note.trim(),
+    };
+    set({ foodNotes: [...form.foodNotes, item] });
+    setFoodInput({ name: "", note: "" });
+  }
+
+  function removeFood(id: string) {
+    set({ foodNotes: form.foodNotes.filter((f) => f.id !== id) });
+  }
+
   return (
     <div className="space-y-4">
       <AvatarPicker photoUrl={form.photoUrl} onChange={(url) => set({ photoUrl: url })} />
 
+      {/* 基本情報 */}
       <div>
         <label className="text-xs text-gray-400">名前 *</label>
         <input
@@ -212,41 +252,100 @@ function CatForm({
       {/* 健康情報 */}
       <div className="pt-2 border-t border-gray-100">
         <p className="text-xs font-semibold text-gray-400 mb-3">💉 健康情報</p>
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs text-gray-400">既往歴</label>
-            <textarea
-              className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm resize-none"
-              rows={3}
-              placeholder="例：2023年 尿路結石で手術、慢性腎臓病"
-              value={form.medicalHistory}
-              onChange={(e) => set({ medicalHistory: e.target.value })}
+
+        {/* 既往歴リスト */}
+        <label className="text-xs text-gray-400">既往歴</label>
+        <div className="space-y-2 mt-1 mb-2">
+          {form.medicalHistory.map((item) => (
+            <div key={item.id} className="flex items-start gap-2 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2">
+              <div className="flex-1 text-sm">
+                {item.date && <span className="text-gray-400 mr-2">{item.date}</span>}
+                <span className="text-gray-700">{item.description}</span>
+              </div>
+              <button type="button" onClick={() => removeMedical(item.id)} className="text-gray-300 shrink-0 pt-0.5">
+                <X size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          <input
+            className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
+            placeholder="時期（例：2023年5月）"
+            value={medInput.date}
+            onChange={(e) => setMedInput((p) => ({ ...p, date: e.target.value }))}
+          />
+          <div className="flex gap-2">
+            <input
+              className="flex-1 border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
+              placeholder="内容（例：尿路結石で手術）"
+              value={medInput.description}
+              onChange={(e) => setMedInput((p) => ({ ...p, description: e.target.value }))}
+              onKeyDown={(e) => e.key === "Enter" && addMedical()}
             />
+            <button
+              type="button"
+              onClick={addMedical}
+              className="bg-orange-100 text-orange-500 rounded-xl px-3"
+            >
+              <Plus size={18} />
+            </button>
           </div>
-          <div>
-            <label className="text-xs text-gray-400">アレルギー・注意事項</label>
-            <textarea
-              className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm resize-none"
-              rows={2}
-              placeholder="例：チキンアレルギー、ラテックスアレルギー"
-              value={form.allergies}
-              onChange={(e) => set({ allergies: e.target.value })}
-            />
-          </div>
+        </div>
+
+        {/* アレルギー */}
+        <div className="mt-4">
+          <label className="text-xs text-gray-400">アレルギー・注意事項</label>
+          <textarea
+            className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm resize-none"
+            rows={2}
+            placeholder="例：チキンアレルギー、ラテックスアレルギー"
+            value={form.allergies}
+            onChange={(e) => set({ allergies: e.target.value })}
+          />
         </div>
       </div>
 
       {/* 食事情報 */}
       <div className="pt-2 border-t border-gray-100">
         <p className="text-xs font-semibold text-gray-400 mb-3">🍽️ 食事</p>
-        <div>
-          <label className="text-xs text-gray-400">いつものごはん・おやつ</label>
-          <textarea
-            className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm resize-none"
-            rows={3}
-            placeholder="例：ロイヤルカナン 腎臓サポート（朝晩各40g）、おやつ：ちゅーる週3回"
-            value={form.foodNotes}
-            onChange={(e) => set({ foodNotes: e.target.value })}
+        <label className="text-xs text-gray-400">ごはん・おやつ</label>
+        <div className="space-y-2 mt-1 mb-2">
+          {form.foodNotes.map((item) => (
+            <div key={item.id} className="flex items-start gap-2 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2">
+              <div className="flex-1 text-sm">
+                <span className="text-gray-700">{item.name}</span>
+                {item.note && <span className="text-gray-400 ml-2">（{item.note}）</span>}
+              </div>
+              <button type="button" onClick={() => removeFood(item.id)} className="text-gray-300 shrink-0 pt-0.5">
+                <X size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <input
+              className="flex-1 border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
+              placeholder="食品名（例：ロイヤルカナン 腎臓サポート）"
+              value={foodInput.name}
+              onChange={(e) => setFoodInput((p) => ({ ...p, name: e.target.value }))}
+              onKeyDown={(e) => e.key === "Enter" && addFood()}
+            />
+            <button
+              type="button"
+              onClick={addFood}
+              className="bg-orange-100 text-orange-500 rounded-xl px-3"
+            >
+              <Plus size={18} />
+            </button>
+          </div>
+          <input
+            className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
+            placeholder="備考（例：朝晩各40g）"
+            value={foodInput.note}
+            onChange={(e) => setFoodInput((p) => ({ ...p, note: e.target.value }))}
+            onKeyDown={(e) => e.key === "Enter" && addFood()}
           />
         </div>
       </div>
@@ -294,9 +393,9 @@ export default function Cats() {
       vetName: form.vetName.trim() || undefined,
       vetPhone: form.vetPhone.trim() || undefined,
       vetAddress: form.vetAddress.trim() || undefined,
-      medicalHistory: form.medicalHistory.trim() || undefined,
+      medicalHistory: form.medicalHistory.length > 0 ? form.medicalHistory : undefined,
       allergies: form.allergies.trim() || undefined,
-      foodNotes: form.foodNotes.trim() || undefined,
+      foodNotes: form.foodNotes.length > 0 ? form.foodNotes : undefined,
     };
     setSaving(true);
     try {
@@ -323,9 +422,9 @@ export default function Cats() {
       vetName: form.vetName.trim() || undefined,
       vetPhone: form.vetPhone.trim() || undefined,
       vetAddress: form.vetAddress.trim() || undefined,
-      medicalHistory: form.medicalHistory.trim() || undefined,
+      medicalHistory: form.medicalHistory.length > 0 ? form.medicalHistory : undefined,
       allergies: form.allergies.trim() || undefined,
-      foodNotes: form.foodNotes.trim() || undefined,
+      foodNotes: form.foodNotes.length > 0 ? form.foodNotes : undefined,
       createdAt: new Date().toISOString(),
     };
     setSaving(true);
