@@ -36,7 +36,7 @@ export default function Login() {
       <div className="w-full max-w-sm">
         {/* ロゴ */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-orange-500">にゃるて</h1>
+          <h1 className="text-4xl font-bold text-orange-500">Nyarte</h1>
           <p className="text-gray-400 text-sm mt-2">猫の健康記録アプリ</p>
         </div>
 

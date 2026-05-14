@@ -152,7 +152,7 @@ export default function Home() {
         {/* タイトルとログアウト */}
         <div className="flex items-center justify-between">
           <div className="w-8" />
-          <h1 className="text-xl font-bold tracking-wide">にゃるて</h1>
+          <h1 className="text-xl font-bold tracking-wide">Nyarte</h1>
           <button onClick={signOut} className="p-1 opacity-70 hover:opacity-100">
             <LogOut size={18} />
           </button>

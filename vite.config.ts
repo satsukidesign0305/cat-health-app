@@ -8,8 +8,8 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "にゃるて",
-        short_name: "にゃるて",
+        name: "Nyarte",
+        short_name: "Nyarte",
         description: "猫の毎日の体調・排泄・投薬を記録するアプリ",
         theme_color: "#f97316",
         background_color: "#fff7ed",
