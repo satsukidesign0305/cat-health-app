@@ -42,7 +42,14 @@ export default function History() {
   return (
     <div className="flex flex-col min-h-screen pb-24">
       <header className="bg-orange-500 text-white px-4 py-4">
-        <h1 className="text-lg font-bold">記録履歴</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-bold">記録履歴</h1>
+          {cat && records.length > 0 && (
+            <Link to={`/pdf?catId=${selectedCatId}`} className="p-1 opacity-80 hover:opacity-100">
+              <Printer size={20} />
+            </Link>
+          )}
+        </div>
         {cats.length > 1 && (
           <div className="flex gap-2 mt-2 overflow-x-auto pb-0.5">
             {cats.map((c) => (
@@ -66,16 +73,6 @@ export default function History() {
       </header>
 
       <main className="flex-1 p-4 space-y-3">
-        {/* PDF出力リンク */}
-        {cat && records.length > 0 && (
-          <Link
-            to={`/pdf?catId=${selectedCatId}`}
-            className="flex items-center justify-center bg-orange-50 border border-orange-200 rounded-2xl p-3 text-orange-500"
-          >
-            <Printer size={22} />
-          </Link>
-        )}
-
         {records.length === 0 && (
           <p className="text-center text-gray-400 mt-12">記録がありません</p>
         )}

@@ -505,7 +505,7 @@ export default function Cats() {
                 </div>
                 <Link
                   to={`/profile-pdf?catId=${cat.id}`}
-                  className="text-orange-400 p-2"
+                  className="text-gray-400 p-2"
                 >
                   <Printer size={17} />
                 </Link>
