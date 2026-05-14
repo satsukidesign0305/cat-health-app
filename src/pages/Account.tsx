@@ -25,7 +25,7 @@ export default function Account() {
     setEmailStatus(null);
     const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
     if (error) {
-      setEmailStatus({ ok: false, msg: `変更に失敗しました：${error.message}` });
+      setEmailStatus({ ok: false, msg: "メールアドレスの変更に失敗しました。もう一度お試しください。" });
     } else {
       setEmailStatus({ ok: true, msg: "確認メールを送信しました。新しいメールアドレスのリンクをクリックして変更を完了してください。" });
       setNewEmail("");
@@ -46,7 +46,7 @@ export default function Account() {
     setPasswordStatus(null);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) {
-      setPasswordStatus({ ok: false, msg: `変更に失敗しました：${error.message}` });
+      setPasswordStatus({ ok: false, msg: "パスワードの変更に失敗しました。もう一度お試しください。" });
     } else {
       setPasswordStatus({ ok: true, msg: "パスワードを変更しました" });
       setNewPassword("");
