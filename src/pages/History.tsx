@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import { ChevronDown, FileText } from "lucide-react";
+import { ChevronDown, Printer } from "lucide-react";
 import { Link } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
 import { getCats, getRecords } from "../lib/db";
@@ -64,10 +64,9 @@ export default function History() {
         {cat && records.length > 0 && (
           <Link
             to={`/pdf?catId=${selectedCatId}`}
-            className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3 text-orange-600"
+            className="flex items-center justify-center bg-orange-50 border border-orange-200 rounded-2xl p-3 text-orange-500"
           >
-            <FileText size={18} />
-            <span className="font-semibold">{cat.name} のPDFを出力</span>
+            <Printer size={22} />
           </Link>
         )}
 
