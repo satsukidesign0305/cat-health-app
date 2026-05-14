@@ -6,6 +6,18 @@ import { ChevronLeft, Printer } from "lucide-react";
 import { getCats, getRecords } from "../lib/db";
 import type { Cat, DailyRecord } from "../lib/types";
 
+function calcAge(birthDate: string): string {
+  const birth = new Date(birthDate + "T00:00:00");
+  const now = new Date();
+  let years = now.getFullYear() - birth.getFullYear();
+  let months = now.getMonth() - birth.getMonth();
+  if (now.getDate() < birth.getDate()) months--;
+  if (months < 0) { years--; months += 12; }
+  if (years === 0) return `${months}か月`;
+  if (months === 0) return `${years}歳`;
+  return `${years}歳${months}か月`;
+}
+
 const EVENT_LABEL: Record<string, string> = {
   vomit: "[嘔吐]",
   diarrhea: "[下痢]",
@@ -49,7 +61,10 @@ function RecordsPrintArea({ cat, records, monthLabel }: {
 
       <div style={{ marginBottom: 6, borderBottom: "2px solid #000", paddingBottom: 4 }}>
         <div style={{ fontSize: 14, fontWeight: "bold" }}>体調記録　{cat.name}　{monthLabel}</div>
-        <div style={{ fontSize: 9, marginTop: 2 }}>出力日：{today}　全{sorted.length}件</div>
+        <div style={{ fontSize: 9, marginTop: 2 }}>
+          {cat.birthDate && <span style={{ marginRight: 12 }}>年齢：{calcAge(cat.birthDate)}</span>}
+          <span>出力日：{today}　全{sorted.length}件</span>
+        </div>
       </div>
 
       <table>

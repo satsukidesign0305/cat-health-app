@@ -8,6 +8,18 @@ import type { Cat } from "../lib/types";
 
 const SEX_LABEL: Record<string, string> = { male: "オス", female: "メス" };
 
+function calcAge(birthDate: string): string {
+  const birth = new Date(birthDate + "T00:00:00");
+  const now = new Date();
+  let years = now.getFullYear() - birth.getFullYear();
+  let months = now.getMonth() - birth.getMonth();
+  if (now.getDate() < birth.getDate()) months--;
+  if (months < 0) { years--; months += 12; }
+  if (years === 0) return `${months}か月`;
+  if (months === 0) return `${years}歳`;
+  return `${years}歳${months}か月`;
+}
+
 const CELL_HEAD: React.CSSProperties = {
   padding: "4px 8px",
   border: "1px solid #bbb",
@@ -67,7 +79,7 @@ function ProfilePrintArea({ cat }: { cat: Cat }) {
         <tbody>
           {cat.breed && <tr><td style={CELL_HEAD}>品種</td><td style={CELL_BODY}>{cat.breed}</td></tr>}
           {cat.sex && <tr><td style={CELL_HEAD}>性別</td><td style={CELL_BODY}>{SEX_LABEL[cat.sex]}</td></tr>}
-          {cat.birthDate && <tr><td style={CELL_HEAD}>生年月日</td><td style={CELL_BODY}>{cat.birthDate}</td></tr>}
+          {cat.birthDate && <tr><td style={CELL_HEAD}>生年月日</td><td style={CELL_BODY}>{cat.birthDate}（{calcAge(cat.birthDate)}）</td></tr>}
           {!cat.breed && !cat.sex && !cat.birthDate && (
             <tr><td style={CELL_BODY} colSpan={2}>（未登録）</td></tr>
           )}
