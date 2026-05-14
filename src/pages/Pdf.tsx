@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -18,15 +18,192 @@ const SEX_LABEL: Record<string, string> = {
   female: "メス",
 };
 
-/** 白黒印刷に最適化した印刷テーブル */
-function PrintTable({ cat, records }: { cat: Cat; records: DailyRecord[] }) {
+const CELL_HEAD: React.CSSProperties = {
+  padding: "4px 8px",
+  border: "1px solid #bbb",
+  backgroundColor: "#f0f0f0",
+  fontWeight: "bold",
+  whiteSpace: "nowrap",
+  width: "28%",
+};
+const CELL_BODY: React.CSSProperties = {
+  padding: "4px 8px",
+  border: "1px solid #bbb",
+};
+
+/** 1ページ目：プロフィールシート */
+function ProfilePage({ cat }: { cat: Cat }) {
+  const today = format(new Date(), "yyyy年M月d日", { locale: ja });
+  const sectionHead: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: "bold",
+    borderLeft: "4px solid #000",
+    paddingLeft: 6,
+    marginBottom: 6,
+    marginTop: 14,
+  };
+
+  return (
+    <div style={{ fontFamily: "'Hiragino Sans','Yu Gothic','Meiryo',sans-serif", color: "#000", fontSize: 10 }}>
+      {/* ヘッダー */}
+      <div style={{ borderBottom: "2px solid #000", paddingBottom: 5, marginBottom: 10 }}>
+        <div style={{ fontSize: 16, fontWeight: "bold" }}>{cat.name}　プロフィール</div>
+        <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>出力日：{today}</div>
+      </div>
+
+      {/* 基本情報 */}
+      <div style={sectionHead}>基本情報</div>
+      <table style={{ borderCollapse: "collapse", width: "60%" }}>
+        <tbody>
+          {cat.breed && <tr><td style={CELL_HEAD}>品種</td><td style={CELL_BODY}>{cat.breed}</td></tr>}
+          {cat.sex && <tr><td style={CELL_HEAD}>性別</td><td style={CELL_BODY}>{SEX_LABEL[cat.sex]}</td></tr>}
+          {cat.birthDate && <tr><td style={CELL_HEAD}>生年月日</td><td style={CELL_BODY}>{cat.birthDate}</td></tr>}
+          {!cat.breed && !cat.sex && !cat.birthDate && (
+            <tr><td style={CELL_BODY} colSpan={2}>（未登録）</td></tr>
+          )}
+        </tbody>
+      </table>
+
+      {/* かかりつけ医 */}
+      {cat.vetName && (
+        <>
+          <div style={sectionHead}>かかりつけ医</div>
+          <table style={{ borderCollapse: "collapse", width: "80%" }}>
+            <tbody>
+              <tr><td style={CELL_HEAD}>病院名</td><td style={CELL_BODY}>{cat.vetName}</td></tr>
+              {cat.vetPhone && <tr><td style={CELL_HEAD}>電話番号</td><td style={CELL_BODY}>{cat.vetPhone}</td></tr>}
+              {cat.vetAddress && <tr><td style={CELL_HEAD}>住所</td><td style={CELL_BODY}>{cat.vetAddress}</td></tr>}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {/* 既往歴 */}
+      {cat.medicalHistory && cat.medicalHistory.length > 0 && (
+        <>
+          <div style={sectionHead}>既往歴</div>
+          <table style={{ borderCollapse: "collapse", width: "100%" }}>
+            <thead>
+              <tr>
+                <th style={{ ...CELL_HEAD, backgroundColor: "#222", color: "#fff", width: "25%" }}>時期</th>
+                <th style={{ ...CELL_BODY, backgroundColor: "#222", color: "#fff", textAlign: "left" }}>内容</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cat.medicalHistory.map((m, i) => (
+                <tr key={m.id}>
+                  <td style={{ ...CELL_BODY, backgroundColor: i % 2 === 1 ? "#f5f5f5" : undefined }}>{m.date || "−"}</td>
+                  <td style={{ ...CELL_BODY, backgroundColor: i % 2 === 1 ? "#f5f5f5" : undefined }}>{m.description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {/* アレルギー・注意事項 */}
+      {cat.allergies && (
+        <>
+          <div style={sectionHead}>アレルギー・注意事項</div>
+          <div style={{ ...CELL_BODY, whiteSpace: "pre-wrap" }}>{cat.allergies}</div>
+        </>
+      )}
+
+      {/* 食事 */}
+      {cat.foodNotes && cat.foodNotes.length > 0 && (
+        <>
+          <div style={sectionHead}>食事</div>
+          <table style={{ borderCollapse: "collapse", width: "100%" }}>
+            <thead>
+              <tr>
+                <th style={{ ...CELL_BODY, backgroundColor: "#222", color: "#fff", textAlign: "left" }}>食品名</th>
+                <th style={{ ...CELL_HEAD, backgroundColor: "#222", color: "#fff", textAlign: "left" }}>備考（量など）</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cat.foodNotes.map((f, i) => (
+                <tr key={f.id}>
+                  <td style={{ ...CELL_BODY, backgroundColor: i % 2 === 1 ? "#f5f5f5" : undefined }}>{f.name}</td>
+                  <td style={{ ...CELL_BODY, backgroundColor: i % 2 === 1 ? "#f5f5f5" : undefined }}>{f.note || "−"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** 2ページ目：月別体調記録テーブル */
+function RecordsPage({ cat, records, monthLabel }: { cat: Cat; records: DailyRecord[]; monthLabel: string }) {
   const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
   const today = format(new Date(), "yyyy年M月d日", { locale: ja });
-  const meta = [
-    cat.breed && `品種：${cat.breed}`,
-    cat.sex && `性別：${SEX_LABEL[cat.sex]}`,
-    cat.birthDate && `生年月日：${cat.birthDate}`,
-  ].filter(Boolean).join("　");
+
+  return (
+    <div style={{ fontFamily: "'Hiragino Sans','Yu Gothic','Meiryo',sans-serif", color: "#000" }}>
+      <div style={{ marginBottom: 6, borderBottom: "2px solid #000", paddingBottom: 4 }}>
+        <div style={{ fontSize: 14, fontWeight: "bold" }}>体調記録　{cat.name}　{monthLabel}</div>
+        <div style={{ fontSize: 9, marginTop: 2 }}>出力日：{today}　全{sorted.length}件</div>
+      </div>
+
+      <table style={{ borderCollapse: "collapse", width: "100%", fontSize: "9.5px" }}>
+        <thead>
+          <tr>
+            {[
+              ["9%", "日付"],
+              ["7%", "おしっこ"],
+              ["7%", "うんち"],
+              ["7%", "体重(kg)"],
+              ["22%", "投薬"],
+              ["20%", "イベント"],
+              ["28%", "メモ"],
+            ].map(([w, label]) => (
+              <th key={label} style={{
+                width: w, backgroundColor: "#222", color: "#fff", fontWeight: "bold",
+                padding: "5px 6px", border: "1px solid #000", textAlign: "left", whiteSpace: "nowrap",
+              }}>{label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map((rec, i) => {
+            const dateLabel = format(new Date(rec.date + "T00:00:00"), "M/d(E)", { locale: ja });
+            const events = rec.events
+              .map((e) => `${EVENT_LABEL[e.type] ?? "[その他]"}${e.note ? `(${e.note})` : ""}`)
+              .join(" ");
+            const notes = [rec.urineNote, rec.poopNote, rec.note].filter(Boolean).join(" / ");
+            const bg = i % 2 === 1 ? "#f0f0f0" : undefined;
+            const td = (content: React.ReactNode, extra?: React.CSSProperties) => (
+              <td style={{ border: "1px solid #555", padding: "4px 6px", verticalAlign: "top", lineHeight: 1.4, backgroundColor: bg, ...extra }}>{content}</td>
+            );
+            return (
+              <tr key={rec.id}>
+                {td(dateLabel, { whiteSpace: "nowrap" })}
+                {td(rec.urineCount || "−", { textAlign: "center" })}
+                {td(rec.poopCount || "−", { textAlign: "center" })}
+                {td(rec.weight ?? "−", { textAlign: "center" })}
+                {td(rec.medications.length === 0 ? "−" : rec.medications.map((m) => (
+                  <span key={m.id} style={{ display: "block", textDecoration: m.given ? "line-through" : undefined }}>
+                    {m.given ? "✓ " : "・"}{m.name}
+                  </span>
+                )))}
+                {td(events || "−")}
+                {td(notes || "−")}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** 印刷エリア（プロフィール＋体調記録の2ページ構成） */
+function PrintArea({ cat, records, selectedMonth, monthLabel }: {
+  cat: Cat; records: DailyRecord[]; selectedMonth: string; monthLabel: string;
+}) {
+  const filtered = records.filter((r) => r.date.startsWith(selectedMonth));
 
   return (
     <div id="print-area">
@@ -35,108 +212,23 @@ function PrintTable({ cat, records }: { cat: Cat; records: DailyRecord[] }) {
           body * { visibility: hidden; }
           #print-area, #print-area * { visibility: visible; }
           #print-area {
-            position: fixed;
+            position: absolute;
             top: 0; left: 0;
             width: 100%;
-            font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
-            color: #000;
           }
           @page { size: A4 landscape; margin: 12mm 15mm; }
           * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .page-break { break-after: page; }
         }
-        #print-area { font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif; color: #000; }
-        #print-area table { border-collapse: collapse; width: 100%; font-size: 9.5px; }
-        #print-area th {
-          background: #222; color: #fff; font-weight: bold;
-          padding: 5px 6px; border: 1px solid #000; text-align: left; white-space: nowrap;
-        }
-        #print-area td { border: 1px solid #555; padding: 4px 6px; vertical-align: top; line-height: 1.4; }
-        #print-area tbody tr:nth-child(even) td { background: #f0f0f0; }
-        .med-done { text-decoration: line-through; }
       `}</style>
 
-      <div style={{ marginBottom: 6, borderBottom: "2px solid #000", paddingBottom: 4 }}>
-        <div style={{ fontSize: 15, fontWeight: "bold" }}>猫の健康記録　{cat.name}</div>
-        <div style={{ fontSize: 9.5, marginTop: 2 }}>
-          {meta && <span style={{ marginRight: 16 }}>{meta}</span>}
-          <span>出力日：{today}　全{sorted.length}件</span>
-        </div>
+      {/* 1ページ目：プロフィール */}
+      <div className="page-break">
+        <ProfilePage cat={cat} />
       </div>
 
-      {/* プロフィール情報 */}
-      {(cat.vetName || (cat.medicalHistory && cat.medicalHistory.length > 0) || cat.allergies || (cat.foodNotes && cat.foodNotes.length > 0)) && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", marginBottom: 8, fontSize: 9 }}>
-          {cat.vetName && (
-            <div style={{ border: "1px solid #aaa", borderRadius: 3, padding: "3px 6px" }}>
-              <span style={{ fontWeight: "bold" }}>🏥 かかりつけ医：</span>
-              {cat.vetName}
-              {cat.vetPhone && <span style={{ marginLeft: 6 }}>☎ {cat.vetPhone}</span>}
-              {cat.vetAddress && <span style={{ marginLeft: 6 }}>📍 {cat.vetAddress}</span>}
-            </div>
-          )}
-          {cat.allergies && (
-            <div style={{ border: "1px solid #aaa", borderRadius: 3, padding: "3px 6px" }}>
-              <span style={{ fontWeight: "bold" }}>⚠️ アレルギー・注意：</span>{cat.allergies}
-            </div>
-          )}
-          {cat.medicalHistory && cat.medicalHistory.length > 0 && (
-            <div style={{ border: "1px solid #aaa", borderRadius: 3, padding: "3px 6px" }}>
-              <span style={{ fontWeight: "bold" }}>💉 既往歴：</span>
-              {cat.medicalHistory.map((m, i) => (
-                <span key={m.id}>{i > 0 ? "　" : ""}{m.date && `${m.date} `}{m.description}</span>
-              ))}
-            </div>
-          )}
-          {cat.foodNotes && cat.foodNotes.length > 0 && (
-            <div style={{ border: "1px solid #aaa", borderRadius: 3, padding: "3px 6px" }}>
-              <span style={{ fontWeight: "bold" }}>🍽️ 食事：</span>
-              {cat.foodNotes.map((f, i) => (
-                <span key={f.id}>{i > 0 ? "　" : ""}{f.name}{f.note && `（${f.note}）`}</span>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      <table>
-        <thead>
-          <tr>
-            <th style={{ width: "9%" }}>日付</th>
-            <th style={{ width: "7%", textAlign: "center" }}>おしっこ</th>
-            <th style={{ width: "7%", textAlign: "center" }}>うんち</th>
-            <th style={{ width: "7%", textAlign: "center" }}>体重(kg)</th>
-            <th style={{ width: "22%" }}>投薬</th>
-            <th style={{ width: "20%" }}>イベント</th>
-            <th style={{ width: "28%" }}>メモ</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((rec) => {
-            const dateLabel = format(new Date(rec.date + "T00:00:00"), "M/d(E)", { locale: ja });
-            const events = rec.events
-              .map((e) => `${EVENT_LABEL[e.type] ?? "[その他]"}${e.note ? `(${e.note})` : ""}`)
-              .join(" ");
-            const notes = [rec.urineNote, rec.poopNote, rec.note].filter(Boolean).join(" / ");
-            return (
-              <tr key={rec.id}>
-                <td style={{ whiteSpace: "nowrap" }}>{dateLabel}</td>
-                <td style={{ textAlign: "center" }}>{rec.urineCount || "−"}</td>
-                <td style={{ textAlign: "center" }}>{rec.poopCount || "−"}</td>
-                <td style={{ textAlign: "center" }}>{rec.weight ?? "−"}</td>
-                <td>
-                  {rec.medications.length === 0 ? "−" : rec.medications.map((m) => (
-                    <span key={m.id} className={m.given ? "med-done" : ""} style={{ display: "block" }}>
-                      {m.given ? "✓ " : "・"}{m.name}
-                    </span>
-                  ))}
-                </td>
-                <td>{events || "−"}</td>
-                <td>{notes || "−"}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {/* 2ページ目：体調記録 */}
+      <RecordsPage cat={cat} records={filtered} monthLabel={monthLabel} />
     </div>
   );
 }
@@ -147,6 +239,7 @@ export default function Pdf() {
   const [cat, setCat] = useState<Cat | null>(null);
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -158,6 +251,23 @@ export default function Pdf() {
     }
     load();
   }, [catId]);
+
+  // 記録がある年月の一覧（新しい順）
+  const availableMonths = useMemo(() => (
+    [...new Set(records.map((r) => r.date.slice(0, 7)))].sort().reverse()
+  ), [records]);
+
+  // 記録ロード後に最新月をデフォルト選択
+  useEffect(() => {
+    if (availableMonths.length > 0 && !selectedMonth) {
+      setSelectedMonth(availableMonths[0]);
+    }
+  }, [availableMonths, selectedMonth]);
+
+  const monthLabel = selectedMonth
+    ? `${selectedMonth.slice(0, 4)}年${parseInt(selectedMonth.slice(5, 7))}月`
+    : "";
+  const filteredCount = records.filter((r) => r.date.startsWith(selectedMonth)).length;
 
   if (loading) {
     return (
@@ -174,40 +284,61 @@ export default function Pdf() {
         <h1 className="text-lg font-bold">PDF出力</h1>
       </header>
 
-      <main className="p-4 space-y-4">
+      <main className="p-4 space-y-4 print:hidden">
         {!cat ? (
           <p className="text-center text-gray-400 mt-20">猫が見つかりません</p>
+        ) : availableMonths.length === 0 ? (
+          <p className="text-center text-gray-400 mt-20">記録がありません</p>
         ) : (
           <>
             <div className="bg-white rounded-2xl p-4 shadow-sm">
               <p className="font-semibold text-gray-700">{cat.name}</p>
-              <p className="text-sm text-gray-400 mt-1">
-                {records.length}件の記録 / A4横向き・白黒印刷対応
-              </p>
+              <p className="text-sm text-gray-400 mt-1">A4横向き・白黒印刷 / 2ページ構成</p>
             </div>
 
-            {records.length === 0 ? (
-              <p className="text-center text-gray-400">記録がありません</p>
-            ) : (
-              <>
-                <button
-                  onClick={() => window.print()}
-                  className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-white bg-orange-500 active:bg-orange-600"
-                >
-                  <Printer size={20} />
-                  印刷 / PDFで保存
-                </button>
-                <p className="text-xs text-center text-gray-400">
-                  印刷ダイアログで「PDFに保存」を選ぶとPDFになります
-                </p>
-                <div className="bg-white rounded-2xl p-4 shadow-sm overflow-x-auto">
-                  <PrintTable cat={cat} records={records} />
-                </div>
-              </>
-            )}
+            {/* 月選択 */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
+              <p className="font-semibold text-gray-700 text-sm">体調記録の年月を選択</p>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
+              >
+                {availableMonths.map((m) => {
+                  const label = `${m.slice(0, 4)}年${parseInt(m.slice(5, 7))}月`;
+                  const count = records.filter((r) => r.date.startsWith(m)).length;
+                  return <option key={m} value={m}>{label}（{count}件）</option>;
+                })}
+              </select>
+              <div className="text-xs text-gray-400 space-y-0.5">
+                <p>📄 1ページ目：プロフィール（かかりつけ医・既往歴・食事など）</p>
+                <p>📄 2ページ目：{monthLabel}の体調記録（{filteredCount}件）</p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => window.print()}
+              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-white bg-orange-500 active:bg-orange-600"
+            >
+              <Printer size={20} />
+              印刷 / PDFで保存
+            </button>
+            <p className="text-xs text-center text-gray-400">
+              印刷ダイアログで「PDFに保存」を選ぶとPDFになります
+            </p>
           </>
         )}
       </main>
+
+      {/* 印刷専用エリア */}
+      {cat && selectedMonth && (
+        <PrintArea
+          cat={cat}
+          records={records}
+          selectedMonth={selectedMonth}
+          monthLabel={monthLabel}
+        />
+      )}
     </div>
   );
 }
