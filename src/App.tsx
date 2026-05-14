@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import Cats from "./pages/Cats";
 import History from "./pages/History";
 import Pdf from "./pages/Pdf";
+import Account from "./pages/Account";
 
 /** 未ログインの場合はログイン画面にリダイレクトするラッパー */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/cats" element={<ProtectedRoute><Cats /></ProtectedRoute>} />
           <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
           <Route path="/pdf" element={<ProtectedRoute><Pdf /></ProtectedRoute>} />
+          <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

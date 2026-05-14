@@ -1,10 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { Cat, ClipboardList, BookOpen } from "lucide-react";
+import { Cat, ClipboardList, BookOpen, UserCircle } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", label: "今日の記録", icon: ClipboardList },
   { href: "/history", label: "履歴", icon: BookOpen },
   { href: "/cats", label: "猫の管理", icon: Cat },
+  { href: "/account", label: "アカウント", icon: UserCircle },
 ];
 
 export default function BottomNav() {
