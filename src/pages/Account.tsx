@@ -27,7 +27,7 @@ export default function Account() {
     if (error) {
       setEmailStatus({ ok: false, msg: "メールアドレスの変更に失敗しました。もう一度お試しください。" });
     } else {
-      setEmailStatus({ ok: true, msg: "確認メールを送信しました。新しいメールアドレスのリンクをクリックして変更を完了してください。" });
+      setEmailStatus({ ok: true, msg: "メールアドレスを変更しました。" });
       setNewEmail("");
     }
     setEmailSaving(false);
@@ -92,7 +92,7 @@ export default function Account() {
             disabled={!newEmail.trim() || emailSaving}
             className="w-full bg-orange-500 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-40"
           >
-            {emailSaving ? "送信中…" : "確認メールを送信"}
+            {emailSaving ? "変更中…" : "変更する"}
           </button>
         </div>
 
