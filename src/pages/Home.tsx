@@ -14,6 +14,8 @@ const EVENT_PRESETS: { type: HealthEvent["type"]; label: string; emoji: string }
   { type: "vomit", label: "嘔吐", emoji: "🤢" },
   { type: "diarrhea", label: "下痢", emoji: "💧" },
   { type: "hospital", label: "通院", emoji: "🏥" },
+  { type: "vaccine", label: "ワクチン接種", emoji: "💉" },
+  { type: "flea", label: "ノミダニ薬", emoji: "🐛" },
 ];
 
 function todayStr() {

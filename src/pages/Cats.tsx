@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { v4 as uuid } from "uuid";
-import { Cat as CatIcon, Plus, Trash2, ChevronLeft, Pencil, Check, X, Camera, Printer } from "lucide-react";
+import { Cat as CatIcon, Plus, Trash2, ChevronLeft, Pencil, Check, X, Camera, Printer, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
-import { getCats, saveCat, deleteCat } from "../lib/db";
+import { getCats, saveCat, deleteCat, getLatestEventDates } from "../lib/db";
 import type { Cat, MedicalHistoryItem, FoodItem } from "../lib/types";
 
 /** 誕生日から現在の年齢を計算する */
@@ -375,6 +375,8 @@ export default function Cats() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [eventDates, setEventDates] = useState<Record<string, { vaccine?: string; flea?: string }>>({});
 
   useEffect(() => {
     getCats().then(setCats).finally(() => setLoading(false));
@@ -440,6 +442,18 @@ export default function Cats() {
     }
   }
 
+  async function toggleExpand(id: string) {
+    if (expandedId === id) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(id);
+    if (!eventDates[id]) {
+      const dates = await getLatestEventDates(id);
+      setEventDates((prev) => ({ ...prev, [id]: dates }));
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!confirm("この猫のデータをすべて削除しますか？")) return;
     await deleteCat(id);
@@ -467,61 +481,155 @@ export default function Cats() {
           <p className="text-center text-gray-400 mt-12">まだ猫が登録されていません</p>
         )}
 
-        {cats.map((cat) => (
-          <div key={cat.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            {editingId === cat.id ? (
-              <div className="p-4">
-                <p className="font-semibold text-gray-700 mb-4">編集中</p>
-                <CatForm
-                  initial={catToForm(cat)}
-                  onSave={(form) => handleSaveEdit(cat.id, form)}
-                  onCancel={() => setEditingId(null)}
-                  saving={saving}
-                />
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 p-4">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-orange-100 flex-shrink-0 flex items-center justify-center">
-                  {cat.photoUrl
-                    ? <img src={cat.photoUrl} alt={cat.name} className="w-full h-full object-cover" />
-                    : <CatIcon size={22} className="text-orange-400" />}
+        {cats.map((cat) => {
+          const isExpanded = expandedId === cat.id;
+          const dates = eventDates[cat.id];
+          return (
+            <div key={cat.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              {editingId === cat.id ? (
+                <div className="p-4">
+                  <p className="font-semibold text-gray-700 mb-4">編集中</p>
+                  <CatForm
+                    initial={catToForm(cat)}
+                    onSave={(form) => handleSaveEdit(cat.id, form)}
+                    onCancel={() => setEditingId(null)}
+                    saving={saving}
+                  />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="font-semibold text-gray-800 truncate">{cat.name}</p>
-                    {cat.sex && (
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
-                        cat.sex === "male" ? "bg-blue-50 text-blue-500" : "bg-pink-50 text-pink-500"
-                      }`}>
-                        {cat.sex === "male" ? "♂︎" : "♀︎"}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-400 truncate">
-                    {[cat.breed, cat.birthDate ? calcAge(cat.birthDate) : undefined]
-                      .filter(Boolean)
-                      .join(" / ")}
-                  </p>
-                </div>
-                <Link
-                  to={`/profile-pdf?catId=${cat.id}`}
-                  className="text-gray-400 p-2"
-                >
-                  <Printer size={17} />
-                </Link>
-                <button
-                  onClick={() => { setEditingId(cat.id); setShowAddForm(false); }}
-                  className="text-gray-400 p-2"
-                >
-                  <Pencil size={17} />
-                </button>
-                <button onClick={() => handleDelete(cat.id)} className="text-gray-300 p-2">
-                  <Trash2 size={17} />
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+              ) : (
+                <>
+                  {/* カードヘッダー（タップで開閉） */}
+                  <button
+                    type="button"
+                    onClick={() => toggleExpand(cat.id)}
+                    className="w-full flex items-center gap-3 p-4 text-left"
+                  >
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-orange-100 flex-shrink-0 flex items-center justify-center">
+                      {cat.photoUrl
+                        ? <img src={cat.photoUrl} alt={cat.name} className="w-full h-full object-cover" />
+                        : <CatIcon size={22} className="text-orange-400" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-semibold text-gray-800 truncate">{cat.name}</p>
+                        {cat.sex && (
+                          <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                            cat.sex === "male" ? "bg-blue-50 text-blue-500" : "bg-pink-50 text-pink-500"
+                          }`}>
+                            {cat.sex === "male" ? "♂︎" : "♀︎"}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 truncate">
+                        {[cat.breed, cat.birthDate ? calcAge(cat.birthDate) : undefined]
+                          .filter(Boolean)
+                          .join(" / ")}
+                      </p>
+                    </div>
+                    <div className="text-gray-300">
+                      {isExpanded ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
+                    </div>
+                  </button>
+
+                  {/* 詳細エリア */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-50 px-4 pb-4 space-y-4">
+                      {/* ワクチン・ノミダニ薬 */}
+                      <div className="pt-3 grid grid-cols-2 gap-3">
+                        <div className="bg-orange-50 rounded-xl p-3">
+                          <p className="text-xs text-gray-400 mb-1">💉 最終ワクチン接種</p>
+                          <p className="text-sm font-medium text-gray-700">
+                            {dates === undefined
+                              ? "読み込み中…"
+                              : dates.vaccine
+                                ? dates.vaccine.replace(/-/g, "/")
+                                : "記録なし"}
+                          </p>
+                        </div>
+                        <div className="bg-orange-50 rounded-xl p-3">
+                          <p className="text-xs text-gray-400 mb-1">🐛 最終ノミダニ薬</p>
+                          <p className="text-sm font-medium text-gray-700">
+                            {dates === undefined
+                              ? "読み込み中…"
+                              : dates.flea
+                                ? dates.flea.replace(/-/g, "/")
+                                : "記録なし"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* かかりつけ医 */}
+                      {(cat.vetName || cat.vetPhone || cat.vetAddress) && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-400 mb-2">🏥 かかりつけ医</p>
+                          <div className="space-y-1 text-sm text-gray-700">
+                            {cat.vetName && <p>{cat.vetName}</p>}
+                            {cat.vetPhone && <p className="text-gray-500">{cat.vetPhone}</p>}
+                            {cat.vetAddress && <p className="text-gray-500 text-xs">{cat.vetAddress}</p>}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 既往歴 */}
+                      {cat.medicalHistory && cat.medicalHistory.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-400 mb-2">📋 既往歴</p>
+                          <div className="space-y-1">
+                            {cat.medicalHistory.map((item) => (
+                              <div key={item.id} className="text-sm text-gray-700">
+                                {item.date && <span className="text-gray-400 mr-2">{item.date}</span>}
+                                {item.description}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* アレルギー */}
+                      {cat.allergies && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-400 mb-1">⚠️ アレルギー・注意事項</p>
+                          <p className="text-sm text-gray-700">{cat.allergies}</p>
+                        </div>
+                      )}
+
+                      {/* 食事 */}
+                      {cat.foodNotes && cat.foodNotes.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-400 mb-2">🍽️ 食事</p>
+                          <div className="space-y-1">
+                            {cat.foodNotes.map((item) => (
+                              <div key={item.id} className="text-sm text-gray-700">
+                                {item.name}
+                                {item.note && <span className="text-gray-400 ml-2">（{item.note}）</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 操作ボタン */}
+                      <div className="flex items-center justify-end gap-1 pt-1 border-t border-gray-50">
+                        <Link to={`/profile-pdf?catId=${cat.id}`} className="text-gray-400 p-2">
+                          <Printer size={17} />
+                        </Link>
+                        <button
+                          onClick={() => { setEditingId(cat.id); setShowAddForm(false); setExpandedId(null); }}
+                          className="text-gray-400 p-2"
+                        >
+                          <Pencil size={17} />
+                        </button>
+                        <button onClick={() => handleDelete(cat.id)} className="text-gray-300 p-2">
+                          <Trash2 size={17} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
 
         {showAddForm ? (
           <div className="bg-white rounded-2xl p-4 shadow-sm">

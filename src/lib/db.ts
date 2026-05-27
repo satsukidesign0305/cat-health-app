@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { Cat, DailyRecord } from "./types";
+import type { Cat, DailyRecord, HealthEvent } from "./types";
 
 // ---- 型変換ヘルパー ----
 
@@ -149,6 +149,25 @@ export async function getRecord(
 
   if (error) throw error;
   return data ? rowToRecord(data) : null;
+}
+
+/** 指定した猫のワクチン・ノミダニ薬の最終記録日を取得 */
+export async function getLatestEventDates(catId: string): Promise<{ vaccine?: string; flea?: string }> {
+  const { data, error } = await supabase
+    .from("daily_records")
+    .select("date, events")
+    .eq("cat_id", catId)
+    .order("date", { ascending: false });
+  if (error || !data) return {};
+  let vaccine: string | undefined;
+  let flea: string | undefined;
+  for (const row of data) {
+    const events = (row.events ?? []) as HealthEvent[];
+    if (!vaccine && events.some((e) => e.type === "vaccine")) vaccine = row.date;
+    if (!flea && events.some((e) => e.type === "flea")) flea = row.date;
+    if (vaccine && flea) break;
+  }
+  return { vaccine, flea };
 }
 
 /** 記録を保存（新規 or 更新） */

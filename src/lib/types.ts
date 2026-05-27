@@ -38,7 +38,7 @@ export interface Medication {
   time?: string;
 }
 
-export type HealthEventType = "vomit" | "diarrhea" | "hospital" | "custom";
+export type HealthEventType = "vomit" | "diarrhea" | "hospital" | "vaccine" | "flea" | "custom";
 
 export interface HealthEvent {
   id: string;

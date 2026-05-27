@@ -22,6 +22,8 @@ const EVENT_LABEL: Record<string, string> = {
   vomit: "[嘔吐]",
   diarrhea: "[下痢]",
   hospital: "[通院]",
+  vaccine: "[ワクチン]",
+  flea: "[ノミダニ薬]",
   custom: "[その他]",
 };
 
