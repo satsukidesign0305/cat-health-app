@@ -10,12 +10,12 @@ import { useAuth } from "../context/AuthContext";
 import { getCats, getRecord, saveRecord } from "../lib/db";
 import type { Cat, DailyRecord, HealthEvent, Medication } from "../lib/types";
 
-const EVENT_PRESETS: { type: HealthEvent["type"]; label: string; emoji: string }[] = [
-  { type: "vomit", label: "嘔吐", emoji: "🤢" },
-  { type: "diarrhea", label: "下痢", emoji: "💧" },
-  { type: "hospital", label: "通院", emoji: "🏥" },
-  { type: "vaccine", label: "ワクチン接種", emoji: "💉" },
-  { type: "flea", label: "ノミダニ薬", emoji: "🐛" },
+const EVENT_PRESETS: { type: HealthEvent["type"]; label: string }[] = [
+  { type: "vomit", label: "嘔吐" },
+  { type: "diarrhea", label: "下痢" },
+  { type: "hospital", label: "通院" },
+  { type: "vaccine", label: "ワクチン接種" },
+  { type: "flea", label: "ノミダニ薬" },
 ];
 
 function todayStr() {
@@ -312,7 +312,7 @@ export default function Home() {
               {record.events.map((ev) => (
                 <div key={ev.id} className="flex items-center gap-2 bg-orange-50 border border-orange-100 rounded-xl px-3 py-2">
                   <span className="text-sm flex-1 text-orange-800">
-                    {EVENT_PRESETS.find((p) => p.type === ev.type)?.emoji ?? "📝"} {ev.label}
+                    {ev.label}
                     {ev.note && <span className="text-orange-500 ml-1">— {ev.note}</span>}
                   </span>
                   <button onClick={() => removeEvent(ev.id)} className="text-orange-300 p-1">
@@ -329,7 +329,7 @@ export default function Home() {
                   onClick={() => addEvent(preset.type, preset.label)}
                   className="border border-gray-100 bg-gray-50 rounded-xl py-2 text-sm text-gray-600 active:bg-orange-50"
                 >
-                  {preset.emoji} {preset.label}
+                  {preset.label}
                 </button>
               ))}
             </div>
